@@ -16,7 +16,7 @@ public class Dice {
 	}
 	
 	public void roll() {
-		currentValue = numbers.get(RANDOM.nextInt(1,7));
+		currentValue = numbers.get(RANDOM.nextInt(0,6));
 	}
 	
 	public Value getCurrentValue() {
