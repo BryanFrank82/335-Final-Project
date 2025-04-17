@@ -1,4 +1,5 @@
 package proj;
+
 import java.util.Random;
 
 public class Computer {
