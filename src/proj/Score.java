@@ -7,7 +7,7 @@ import java.util.*;
 public class Score {
 
 	// return MAP <category, score> for all the category. 
-	public Map<String, Integer> evaluate(List<Dice> diceList) {
+	public Map<String, Integer> evaluate(ArrayList<Dice> diceList) {
 		int[] dice = convertDiceToValues(diceList);
 
 		Map<String, Integer> scores = new LinkedHashMap<>();
