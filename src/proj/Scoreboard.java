@@ -39,8 +39,8 @@ public class Scoreboard {
     }
     
     // return the list of the category that still empty(null)
-    public List<String> getRemainingCategories() {
-        List<String> remaining = new ArrayList<>();
+    public ArrayList<String> getRemainingCategories() {
+        ArrayList<String> remaining = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : scores.entrySet()) {
             if (entry.getValue() == null) {
                 remaining.add(entry.getKey());
