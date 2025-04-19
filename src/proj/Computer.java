@@ -1,5 +1,7 @@
 package proj;
 
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 
 public class Computer {
@@ -7,14 +9,19 @@ public class Computer {
         EASY, HARD
     }
 	private Difficulty mode;
+	private Cup cup;
 	
 	public Computer(Difficulty mode) {
 		this.mode = mode;
+		this.cup = new Cup();
 	}
 	
-	public Score choose(int[] roll) {
-		Score maxChoice;
-		Score[] scores = roll.getScores();
+	public ArrayList<Object> choose(ArrayList<Dice> roll) {
+		// finalChoice = [String, Integer] representation of score choice made
+		ArrayList<Object> finalChoice = new ArrayList<>();
+		Score choices = new Score();
+		String maxScore = null;
+		Map<String, Integer> scores = choices.evaluate(roll);
 		// if no possible scoring exhists
 		if (scores.size() == 0) {
 			return null;
@@ -22,41 +29,53 @@ public class Computer {
 		// finds score choice with the maximum points
 		if (mode == Difficulty.HARD) {
 			int max = 0;
-			for (int i = 0; i<scores.length; i++) {
-				int points = scores[i].calculate(roll);
-				if (points > max) {
-					max = points;
-					maxChoice = scores[i];
-				}
+			for (Map.Entry<String, Integer> entry : scores.entrySet()) {
+	            if (entry.getValue() > max) {
+	                max = entry.getValue();
+	                maxScore = entry.getKey();
+	            }
 			}
+			finalChoice.add(maxScore);
+			finalChoice.add(max);
+			return finalChoice;
 		// chooses a random score choice
 		} else {
 			Random random = new Random();
-	        int randIndex = random.nextInt(scores.length);
-	        Score randomScore = scores[randIndex];
-			return randomScore;
+			ArrayList<String> possibleScores = new ArrayList<>(scores.keySet());
+	        int randIndex = random.nextInt(possibleScores.size());
+	        maxScore = possibleScores.get(randIndex);
+	        Integer value = scores.get(maxScore);
+	        finalChoice.add(maxScore);
+			finalChoice.add(value);
+			return finalChoice;
 		}
-		return maxChoice;
+		
 	}
 	
 	public void roll(Dice dice, Scoreboard scoreboard) {
 		int rollCount = 1;
-		int[] roll = dice.getRoll();
-		Score choice = choose(roll);
-		while (choice != null && rollCount<3) {
+		this.cup.rollDice();
+		ArrayList<Dice> roll = new ArrayList<>();
+		roll.addAll(cup.getInDice());
+		roll.addAll(cup.getOutDice());
+		ArrayList<Object> choice = choose(roll);
+		while (rollCount<3) {
 			if (choice != null) {
-				scoreboard.score(choice);
+				scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
 				break;
 			} else {
 				// reroll and increment count
 				rollCount += 1;
-				roll = dice.getRoll();
+				this.cup.rollDice();
+				roll = new ArrayList<>();
+				roll.addAll(cup.getInDice());
+				roll.addAll(cup.getOutDice());
 				choice = choose(roll);
 			}
 		}
 		// last roll
 		if (rollCount == 3) {
-			scoreboard.score(choice);
+			scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
 		}
 	}
 }
