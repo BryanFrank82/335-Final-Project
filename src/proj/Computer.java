@@ -1,6 +1,7 @@
 package proj;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
 
@@ -15,7 +16,7 @@ public class Computer {
 		this.mode = mode;
 		this.cup = new Cup();
 	}
-	
+	// This method removes all dice of a select value
 	private void removeSimilar(ArrayList<Dice> inDice, int value) {
 		ArrayList<Dice> toMove = new ArrayList<>();
 		for (int i = 0; i<inDice.size(); i++) {
@@ -28,7 +29,11 @@ public class Computer {
 			cup.removeDiceFromCup(d);
 		}
 	}
-	
+	/*
+	 * This method helps decide which dice to keep. If there are 2+ similar
+	 * dice in a roll or 3+ similar dice in total, it will transfer the
+	 * corresponding dice.
+	 */
 	private void keepDice(ArrayList<Dice> roll) {
 		ArrayList<Dice> inDice = cup.getInDice();
 		int[] freqIn = new int[6]; // index 0 = ONE, 5 = SIX
@@ -62,6 +67,10 @@ public class Computer {
 		}
 	}
 	
+	/*
+	 * This method chooses between eligible scoring options depending
+	 * on the difficulty level
+	 */
 	public ArrayList<Object> choose(ArrayList<Dice> roll) {
 		// finalChoice = [String, Integer] representation of score choice made
 		ArrayList<Object> finalChoice = new ArrayList<>();
@@ -97,7 +106,10 @@ public class Computer {
 		}
 		
 	}
-	
+	/*
+	 * This method rolls the die an decides whether to reroll or not
+	 * base on scoring options and numeric potential
+	 */
 	public void roll(Dice dice, Scoreboard scoreboard) {
 		int rollCount = 1;
 		this.cup.rollDice();
@@ -106,8 +118,8 @@ public class Computer {
 		roll.addAll(cup.getOutDice());
 		ArrayList<Object> choice = choose(roll);
 		while (rollCount<3) {
-			// if chosen score is atleast 14 it will select it
-			if (choice != null && (Integer)choice.get(1) >= 14) {
+			// if chosen score is atleast 13 it will select it
+			if (choice != null && (Integer)choice.get(1) >= 13)  {
 				scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
 				break;
 			} else {
