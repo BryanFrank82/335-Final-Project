@@ -28,6 +28,13 @@ public class Cup{
 			outCup.add(dice);
 		}
 	}
+	// remove dice with select Dice instance
+	public void removeDiceFromCup(Dice dice) {
+		if(inCup.size() > 0) {
+			inCup.remove(dice);
+			outCup.add(dice);
+		}
+	}
 	
 	public void rollDice() {
 		for(int i = 0;i<inCup.size();i++) {

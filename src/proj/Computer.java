@@ -16,6 +16,52 @@ public class Computer {
 		this.cup = new Cup();
 	}
 	
+	private void removeSimilar(ArrayList<Dice> inDice, int value) {
+		ArrayList<Dice> toMove = new ArrayList<>();
+		for (int i = 0; i<inDice.size(); i++) {
+			Dice curr = inDice.get(i);
+			if (curr.getCurrentValue().ordinal() == value) {
+				toMove.add(curr);
+			}
+		}
+		for (Dice d: toMove) {
+			cup.removeDiceFromCup(d);
+		}
+	}
+	
+	private void keepDice(ArrayList<Dice> roll) {
+		ArrayList<Dice> inDice = cup.getInDice();
+		int[] freqIn = new int[6]; // index 0 = ONE, 5 = SIX
+		int[] freqTotal = new int[6];
+		for (Dice d : inDice) {
+		    freqIn[d.getCurrentValue().ordinal()]++;
+		}
+		for (Dice d : roll) {
+		    freqTotal[d.getCurrentValue().ordinal()]++;
+		}
+		for (int i=0 ; i<freqIn.length; i++) {
+			// inCount >= 3
+		    if (freqIn[i] > 2) {
+		        removeSimilar(inDice, i);
+		        return;
+		    }
+		}
+		for (int i=0 ; i<freqIn.length; i++) {
+			// inCount >= 2
+		    if (freqIn[i] > 1) {
+		        removeSimilar(inDice, i);
+		        return;
+		    }
+		}
+		for (int i=0 ; i<freqTotal.length; i++) {
+			// totalCount >= 3
+		    if (freqTotal[i] > 2) {
+		        removeSimilar(inDice, i);
+		        return;
+		    }
+		}
+	}
+	
 	public ArrayList<Object> choose(ArrayList<Dice> roll) {
 		// finalChoice = [String, Integer] representation of score choice made
 		ArrayList<Object> finalChoice = new ArrayList<>();
@@ -60,11 +106,13 @@ public class Computer {
 		roll.addAll(cup.getOutDice());
 		ArrayList<Object> choice = choose(roll);
 		while (rollCount<3) {
-			if (choice != null) {
+			// if chosen score is atleast 14 it will select it
+			if (choice != null && (Integer)choice.get(1) >= 14) {
 				scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
 				break;
 			} else {
-				// reroll and increment count
+				// select dice to keep, reroll, and increment count
+				keepDice(roll);
 				rollCount += 1;
 				this.cup.rollDice();
 				roll = new ArrayList<>();
