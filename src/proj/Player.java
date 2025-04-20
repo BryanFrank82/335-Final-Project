@@ -1,3 +1,5 @@
+package proj;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,7 +9,6 @@ public class Player {
 	public enum PlayerType { HUMAN, COMPUTER }
 	private String name;
 	private List<Integer> gameScore;
-	private int historicalScore;
 	//3 times
 	private int rollCount;
 	
@@ -15,13 +16,18 @@ public class Player {
 	private List<Boolean> keepFlags;
 	private PlayerType type;
 	
-	public Player(String name, int historicalScore, PlayerType type) {
+	public Player(String name, PlayerType type) {
         this.name = name;
         this.gameScore = new ArrayList<>();;
-        this.historicalScore = historicalScore;
         this.rollCount = 0;
         this.type = type;
 	    keepFlags = new ArrayList<>();
+	}
+	
+	public PlayerType getType() {
+		
+		return type;
+		
 	}
 	
 	
@@ -38,10 +44,7 @@ public class Player {
         return gameScore.stream().mapToInt(Integer::intValue).sum();
     }
 	
-	
-	public int getHistoricalScore() {
-        return historicalScore;
-    }
+
 	
 	public int getRollCount() {
         return rollCount;
@@ -57,7 +60,6 @@ public class Player {
     }
 	
 	public void endGame() {
-        historicalScore += getGameScoreSum();
         gameScore.clear();
         resetRollCount();
     }
