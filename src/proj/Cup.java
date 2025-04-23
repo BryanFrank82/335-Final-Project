@@ -51,4 +51,10 @@ public class Cup{
 		ArrayList<Dice> outCupCopy = outCup;
 		return outCupCopy;
 	}
+	
+	public void resetCup() {
+		for (int i=0; i<outCup.size(); i++) {
+			addDiceToCup(i);
+		}
+	}
 }

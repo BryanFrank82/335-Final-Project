@@ -86,12 +86,16 @@ public class Computer {
 	 * This method chooses between eligible scoring options depending
 	 * on the difficulty level
 	 */
-	public ArrayList<Object> choose(ArrayList<Dice> roll) {
+	public ArrayList<Object> choose(ArrayList<Dice> roll, Scoreboard scoreboard) {
 		// finalChoice = [String, Integer] representation of score choice made
 		ArrayList<Object> finalChoice = new ArrayList<>();
 		Score choices = new Score();
 		String maxScore = null;
+		ArrayList<String> remaining = scoreboard.getRemainingCategories();
 		Map<String, Integer> scores = choices.evaluate(roll);
+		// removes all scores that are already taken or aren't possible
+		scores.entrySet().removeIf(e -> !remaining.contains(e.getKey()) 
+				|| e.getValue() == 0);
 		// if no possible scoring exhists
 		if (scores.size() == 0) {
 			return null;
@@ -100,7 +104,7 @@ public class Computer {
 		if (mode == Difficulty.HARD) {
 			// if a special score exhists, return the highest one (if above 10)
 			if (!findSpecial(scores).isEmpty()) {
-				int max = 0;
+				int max = -1;
 				for (Map.Entry<String, Integer> entry : scores.entrySet()) {
 		            if (entry.getValue() > max) {
 		                max = entry.getValue();
@@ -114,7 +118,7 @@ public class Computer {
 				}
 			}
 			// else return the highest possible score
-			int max = 0;
+			int max = -1;
 			for (Map.Entry<String, Integer> entry : scores.entrySet()) {
 	            if (entry.getValue() > max) {
 	                max = entry.getValue();
@@ -135,23 +139,31 @@ public class Computer {
 			finalChoice.add(value);
 			return finalChoice;
 		}
-		
 	}
+
+	
 	/*
 	 * This method rolls the die an decides whether to reroll or not
 	 * base on scoring options and numeric potential
 	 */
-	public void roll(Dice dice, Scoreboard scoreboard) {
+	public void roll(Scoreboard scoreboard) {
+		int lowerBound;
+		// easy mode will accept lower scores instead of rerolling
+		if (mode == Difficulty.HARD) {
+			lowerBound = 13;
+		} else {
+			lowerBound = 5;
+		}
 		int rollCount = 1;
 		this.cup.rollDice();
 		ArrayList<Dice> roll = new ArrayList<>();
 		roll.addAll(cup.getInDice());
 		roll.addAll(cup.getOutDice());
-		ArrayList<Object> choice = choose(roll);
+		ArrayList<Object> choice = choose(roll, scoreboard);
 		while (rollCount<3) {
-			// if chosen score is atleast 13 or is special (and > 10)
-			if (choice != null && ((Integer)choice.get(1) >= 13) || 
-					isSpecial((String)choice.get(0)))  {
+			// if chosen score is atleast 13 (or 5) or is special (and > 10)
+			if (choice != null && (((Integer)choice.get(1) >= lowerBound) || 
+					isSpecial((String)choice.get(0))))  {
 				scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
 				break;
 			} else {
@@ -162,12 +174,38 @@ public class Computer {
 				roll = new ArrayList<>();
 				roll.addAll(cup.getInDice());
 				roll.addAll(cup.getOutDice());
-				choice = choose(roll);
+				choice = choose(roll, scoreboard);
 			}
 		}
 		// last roll
 		if (rollCount == 3) {
-			scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
+			if (choice != null) {
+				scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
+			} else {
+				// randomly assigns zero score if no score is possible
+				Random random = new Random();
+				ArrayList<String> remaining = scoreboard.getRemainingCategories();
+				int randIndex = random.nextInt(remaining.size());
+				String category = remaining.get(randIndex);
+				scoreboard.setScore(category, 0);
+			}
 		}
+		this.cup.resetCup();
 	}
+	
+	// TEMPORARY METHOD FOR FIXED ROLLING (TESTING)
+	public void rollDiceForTesting(ArrayList<Dice> fixedDice) {
+	    this.cup = new Cup() {
+	        @Override
+	        public ArrayList<Dice> getInDice() {
+	            return fixedDice;
+	        }
+
+	        @Override
+	        public void rollDice() {
+	            // skip actual rolling
+	        }
+	    };
+	}
+
 }
