@@ -1,9 +1,6 @@
 package proj;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class Computer {
     public enum Difficulty {
@@ -66,6 +63,24 @@ public class Computer {
 		    }
 		}
 	}
+	// detects if a score is special (bottom 6)
+	private boolean isSpecial(String score) {
+		Set<String> specialScores = new HashSet<>(Arrays.asList(
+		        "Three of a Kind", "Four of a Kind", "Full House",
+		        "Small Straight", "Large Straight", "Yahtzee"));
+		return specialScores.contains(score);
+	}
+	
+	// returns a map of eligible special scores (bottom 6)
+	private Map<String,Integer> findSpecial(Map<String, Integer> scores) {
+		    Map<String, Integer> specials = new HashMap<>();
+		    for (Map.Entry<String, Integer> entry : scores.entrySet()) {
+		        if (isSpecial(entry.getKey())) {
+		            specials.put(entry.getKey(), entry.getValue());
+		        }
+		    }
+		    return specials;
+	}
 	
 	/*
 	 * This method chooses between eligible scoring options depending
@@ -81,8 +96,24 @@ public class Computer {
 		if (scores.size() == 0) {
 			return null;
 		}
-		// finds score choice with the maximum points
+		// finds score choice with the maximum points, or a special score
 		if (mode == Difficulty.HARD) {
+			// if a special score exhists, return the highest one (if above 10)
+			if (!findSpecial(scores).isEmpty()) {
+				int max = 0;
+				for (Map.Entry<String, Integer> entry : scores.entrySet()) {
+		            if (entry.getValue() > max) {
+		                max = entry.getValue();
+		                maxScore = entry.getKey();
+		            }
+				}
+				if (max >= 10) {
+					finalChoice.add(maxScore);
+					finalChoice.add(max);
+					return finalChoice;
+				}
+			}
+			// else return the highest possible score
 			int max = 0;
 			for (Map.Entry<String, Integer> entry : scores.entrySet()) {
 	            if (entry.getValue() > max) {
@@ -118,8 +149,9 @@ public class Computer {
 		roll.addAll(cup.getOutDice());
 		ArrayList<Object> choice = choose(roll);
 		while (rollCount<3) {
-			// if chosen score is atleast 13 it will select it
-			if (choice != null && (Integer)choice.get(1) >= 13)  {
+			// if chosen score is atleast 13 or is special (and > 10)
+			if (choice != null && ((Integer)choice.get(1) >= 13) || 
+					isSpecial((String)choice.get(0)))  {
 				scoreboard.setScore((String)choice.get(0), (Integer)choice.get(1));
 				break;
 			} else {
