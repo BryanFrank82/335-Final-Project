@@ -7,12 +7,12 @@ public class Cup{
 	private ArrayList<Dice>outCup;
 	
 	public Cup(){
-		inCup = new ArrayList<Dice>();
-		for(int i = 0;i<5;i++) {
-			Dice dice = new Dice();
+		inCup = new ArrayList<>();
+		for(int i = 0; i < 5; i++) {
+			Dice dice = DiceFactory.getDice(i);
 			inCup.add(dice);
 		}
-		outCup = new ArrayList<Dice>();
+		outCup = new ArrayList<>();
 	}
 	
 	public void addDiceToCup(int pos) {
@@ -43,13 +43,11 @@ public class Cup{
 	}
 	
 	public ArrayList<Dice> getInDice() {
-		ArrayList<Dice> inCupCopy = inCup;
-		return inCupCopy;
+		return new ArrayList<>(inCup);
 	}
-	
+
 	public ArrayList<Dice> getOutDice() {
-		ArrayList<Dice> outCupCopy = outCup;
-		return outCupCopy;
+		return new ArrayList<>(outCup);
 	}
 	
 	public void resetCup() {
