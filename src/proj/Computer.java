@@ -8,4 +8,5 @@ public interface Computer {
 	
 	// roll until scored
 	void roll(Scoreboard scoreboard);
+	
 }
