@@ -274,7 +274,14 @@ public class View extends JFrame {
         resetDiceButtons();
         cup = new Cup(); // reset
 
-        nextTurn();
+        // 🚀 Here: check for Game Over
+        if (isGameOver()) {
+            showLeaderboard();
+            startNewGame();
+        } else {
+            nextTurn();
+        }
+
     }
 
     private void updatePlayerScoreboardDisplay(Player p) {
@@ -324,11 +331,18 @@ public class View extends JFrame {
                 }
 
                 updatePlayerScoreboardDisplay(currentPlayer);
-                // After computer finishes playing, move to next player
-                nextTurn();
+
+                // 🚀 Here: check for Game Over
+                if (isGameOver()) {
+                    showLeaderboard();
+                    startNewGame();
+                } else {
+                    nextTurn();
+                }
             });
             timer.setRepeats(false);
             timer.start();
+
         }
     }
 
@@ -503,6 +517,28 @@ public class View extends JFrame {
     	ImageIcon original = new ImageIcon(getClass().getResource(path));
     	Image scaledImage = original.getImage().getScaledInstance(width,height,Image.SCALE_SMOOTH);
     	return new ImageIcon(scaledImage);
+    }
+    
+    private boolean isGameOver() {
+        for (Player p : players) {
+            if (!playerScoreboards.get(p).getRemainingCategories().isEmpty()) {
+                return false; // still some categories left
+            }
+        }
+        return true; // all players filled all categories
+    }
+
+    private void showLeaderboard() {
+        List<Player> sortedPlayers = new ArrayList<>(players);
+        sortedPlayers.sort((a, b) -> playerScoreboards.get(b).getTotalScore() - playerScoreboards.get(a).getTotalScore());
+
+        StringBuilder leaderboard = new StringBuilder("🏆 Final Leaderboard 🏆\n\n");
+        for (int i = 0; i < sortedPlayers.size(); i++) {
+            Player p = sortedPlayers.get(i);
+            leaderboard.append((i + 1) + ". " + p.getName() + " - " + playerScoreboards.get(p).getTotalScore() + " points\n");
+        }
+
+        JOptionPane.showMessageDialog(this, leaderboard.toString());
     }
 
 
