@@ -62,37 +62,35 @@ public class Score {
 	}
 
 	private int scoreThreeOfAKind(int[] dice) {
-		for (int i = 1; i <= 6; i++) {
-			int count = 0;
-			for (int d : dice) {
-				if (d == i)
-					count++;
-			}
-			if (count >= 3) {
-				int total = 0;
-				for (int d : dice)
-					total += d;
-				return total;
-			}
-		}
-		return 0;
+		for (int face = 1; face <= 6; face++) {
+	        int count = 0;
+	        for (int d : dice) {
+	            if (d == face) {
+	                count++;
+	            }
+	        }
+	        // only sum the three matching dice
+	        if (count >= 3) {
+	            return face * count;
+	        }
+	    }
+	    return 0;
 	}
 
 	private int scoreFourOfAKind(int[] dice) {
-		for (int i = 1; i <= 6; i++) {
-			int count = 0;
-			for (int d : dice) {
-				if (d == i)
-					count++;
-			}
-			if (count >= 4) {
-				int total = 0;
-				for (int d : dice)
-					total += d;
-				return total;
-			}
-		}
-		return 0;
+		for (int face = 1; face <= 6; face++) {
+	        int count = 0;
+	        for (int d : dice) {
+	            if (d == face) {
+	                count++;
+	            }
+	        }
+	        // only sum the four matching dice
+	        if (count >= 4) {
+	            return face * count;
+	        }
+	    }
+	    return 0;
 	}
 
 	private int scoreFullHouse(int[] dice) {

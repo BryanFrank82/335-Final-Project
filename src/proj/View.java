@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.util.*;
 
 public class View extends JFrame {
@@ -23,10 +24,27 @@ public class View extends JFrame {
     private Scoreboard scoreboard = new Scoreboard();
     private Scoreboard computerScoreboard = new Scoreboard();
     private Score scoreCalculator = new Score();
+    
+    private final ImageIcon die1Icon;
+    private final ImageIcon die2Icon;
+    private final ImageIcon die3Icon;
+    private final ImageIcon die4Icon;
+    private final ImageIcon die5Icon;
+    private final ImageIcon die6Icon;
 
     private Computer computerPlayer; 
 
     public View() {
+    	int iconWidth = 85;  // or whatever fits your UI
+    	int iconHeight = 85;
+
+    	die1Icon = loadScaledIcon("/images/dice1.png", iconWidth, iconHeight);
+    	die2Icon = loadScaledIcon("/images/dice2.png", iconWidth, iconHeight);
+    	die3Icon = loadScaledIcon("/images/dice3.png", iconWidth, iconHeight);
+    	die4Icon = loadScaledIcon("/images/dice4.png", iconWidth, iconHeight);
+    	die5Icon = loadScaledIcon("/images/dice5.png", iconWidth, iconHeight);
+    	die6Icon = loadScaledIcon("/images/dice6.png", iconWidth, iconHeight);
+    	
         PlayerLibrary library = new PlayerLibrary();
         currentPlayer = new Player("You", Player.PlayerType.HUMAN);
         library.addPlayer(currentPlayer);
@@ -57,6 +75,12 @@ public class View extends JFrame {
         }
 
         setupUI();
+    }
+    
+    private ImageIcon loadScaledIcon(String path, int width, int height) {
+        ImageIcon original = new ImageIcon(getClass().getResource(path));
+        Image scaledImage = original.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        return new ImageIcon(scaledImage);
     }
 
     private void setupUI() {
@@ -139,6 +163,24 @@ public class View extends JFrame {
         rightPanel.add(computerScoreboardPanel);
         add(rightPanel, BorderLayout.EAST);
     }
+    
+    private void setDieIcon(JComponent comp, int faceValue) {
+    	 ImageIcon icon = switch (faceValue) {
+         case 1 -> die1Icon;
+         case 2 -> die2Icon;
+         case 3 -> die3Icon;
+         case 4 -> die4Icon;
+         case 5 -> die5Icon;
+         case 6 -> die6Icon;
+         default -> null;
+     };
+
+     if (comp instanceof JLabel label) {
+         label.setIcon(icon);
+     } else if (comp instanceof AbstractButton button) {
+         button.setIcon(icon);
+     }
+    }
 
     public void rollDice() {
         if (!currentPlayer.ifcanroll()) {
@@ -150,7 +192,10 @@ public class View extends JFrame {
             if (!diceButtons[i].isSelected()) {
                 inDice.get(i).roll();
             }
-            diceButtons[i].setText(String.valueOf(inDice.get(i).getCurrentValue().ordinal() + 1));
+            int face = inDice.get(i).getCurrentValue().ordinal() + 1;
+            setDieIcon(diceButtons[i], face);
+            diceButtons[i].setText(null);
+
         }
         currentPlayer.incrementRollCount();
         if (!currentPlayer.ifcanroll()) {
@@ -233,7 +278,10 @@ public class View extends JFrame {
             cd.addAll(((ComputerHard)computerPlayer).getCurrentDice());
         }
         for (int i = 0; i < cd.size(); i++) {
-            computerDiceLabels[i].setText(String.valueOf(cd.get(i).getCurrentValue().ordinal() + 1));
+        	int face = cd.get(i).getCurrentValue().ordinal() + 1;
+        	setDieIcon(computerDiceLabels[i], face);
+        	computerDiceLabels[i].setText(null);
+
         }
         updateComputerScoreboardDisplay();
     }
@@ -264,6 +312,7 @@ public class View extends JFrame {
     private void resetDiceButtons() {
         for (JToggleButton btn : diceButtons) {
             btn.setSelected(false);
+            btn.setIcon(null);
             btn.setText("?");
         }
         cup = new Cup();
