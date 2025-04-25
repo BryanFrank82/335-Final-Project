@@ -9,6 +9,7 @@ public class GameBoard {
 	private List<Player> players;
 	private int currentIndex;
 	private final PlayerLibrary library;
+	
 
 	
 	
@@ -26,6 +27,10 @@ public class GameBoard {
 	        }
 	        return false;
 	    }
+
+	public int getCurrentIndex() {
+		return currentIndex;
+	}
 	 
 	 
 	 public Player getCurrentPlayer() {
