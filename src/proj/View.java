@@ -1,6 +1,8 @@
 package proj;
 
 import javax.swing.*;
+import javax.swing.Timer;
+
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -9,61 +11,91 @@ import java.util.*;
 public class View extends JFrame {
     private Model model;
     private Controller controller;
-    private Player currentPlayer;
 
     private JButton rollButton, scoreButton, newGameButton;
     private JToggleButton[] diceButtons;
     private JLabel[] computerDiceLabels;
+    private JLabel turnLabel;
 
     private Cup cup = new Cup();
     private JPanel playerDicePanel, computerDicePanel;
-    private JPanel scoreboardPanel, computerScoreboardPanel;
-    private Map<String, JLabel> categoryLabels, computerCategoryLabels;
+    private JPanel allScoreboardsPanel;
 
-    private Scoreboard scoreboard = new Scoreboard();
-    private Scoreboard computerScoreboard = new Scoreboard();
+    private ArrayList<Player> players = new ArrayList<>();
+    private int currentPlayerIndex = 0;
+    private Player currentPlayer;
+
+    private Map<Player, Scoreboard> playerScoreboards = new HashMap<>();
+    private Map<Player, Map<String, JLabel>> playerScoreboardLabels = new HashMap<>();
+
     private Score scoreCalculator = new Score();
-
-    private Computer computerPlayer; 
 
     public View() {
         PlayerLibrary library = new PlayerLibrary();
-        currentPlayer = new Player("You", Player.PlayerType.HUMAN);
-        library.addPlayer(currentPlayer);
-        model = new Model(library);
+
+        // Setup players
+        String humanInput = JOptionPane.showInputDialog(this, "Enter number of human players:");
+        if (humanInput == null) System.exit(0);
+        int numHumans = Integer.parseInt(humanInput);
+
+        String aiInput = JOptionPane.showInputDialog(this, "Enter number of computer players:");
+        if (aiInput == null) System.exit(0);
+        int numAIs = Integer.parseInt(aiInput);
+
+        for (int i = 1; i <= numHumans; i++) {
+            Player p = new Player("Human " + i, Player.PlayerType.HUMAN);
+            players.add(p);
+            library.addPlayer(p);
+        }
+
+        for (int i = 1; i <= numAIs; i++) {
+            String[] difficulties = { "Easy", "Hard" };
+            String choice = (String) JOptionPane.showInputDialog(
+                    this,
+                    "Choose difficulty for Computer " + i + ":",
+                    "Difficulty Selection",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    difficulties,
+                    difficulties[0]
+            );
+            if (choice == null) System.exit(0);
+
+            Player p;
+            if (choice.equals("Easy")) {
+                p = new ComputerEasy();
+            } else {
+                p = new ComputerHard();
+            }
+
+            // ✅ After creating, immediately reset their cup
+            if (p instanceof ComputerEasy) {
+                ((ComputerEasy) p).resetCup();
+            } else if (p instanceof ComputerHard) {
+                ((ComputerHard) p).resetCup();
+            }
+
+            players.add(p);
+            library.addPlayer(p);
+        }
+
+        currentPlayer = players.get(0);
+        model = new Model();
         controller = new Controller(model, this);
 
-        // Ask player for computer difficulty
-        String[] difficulties = { "Easy", "Hard" };
-        String choice = (String) JOptionPane.showInputDialog(
-                this,
-                "Choose computer difficulty:",
-                "Difficulty Selection",
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                difficulties,
-                difficulties[0]
-        );
-        
-        if (choice == null) {
-            JOptionPane.showMessageDialog(this, "You must select a difficulty to start the game. Exiting...");
-            System.exit(0);
-        }
-        
-        if (choice.equals("Easy")) {
-            computerPlayer = new ComputerEasy();
-        } else {
-            computerPlayer = new ComputerHard();
-        }
-
         setupUI();
+        turnLabel.setText("Current Turn: " + currentPlayer.getName());
     }
 
     private void setupUI() {
         setTitle("Yahtzee Game");
-        setSize(1000, 600);
+        setSize(1200, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        turnLabel = new JLabel("Current Turn: ", SwingConstants.CENTER);
+        turnLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        add(turnLabel, BorderLayout.NORTH);
 
         playerDicePanel = new JPanel(new GridLayout(1, 5));
         diceButtons = new JToggleButton[5];
@@ -101,46 +133,49 @@ public class View extends JFrame {
         buttonPanel.add(newGameButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        scoreboardPanel = new JPanel(new GridLayout(14, 1));
-        categoryLabels = new HashMap<>();
-        computerScoreboardPanel = new JPanel(new GridLayout(14, 1));
-        computerCategoryLabels = new HashMap<>();
+        allScoreboardsPanel = new JPanel();
+        allScoreboardsPanel.setLayout(new GridLayout(players.size(), 1));
 
-        java.util.List<String> categories = Arrays.asList(
-            "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
-            "Three of a Kind", "Four of a Kind", "Full House",
-            "Small Straight", "Large Straight", "Yahtzee", "Chance"
-        );
+        for (Player p : players) {
+            Scoreboard sb = new Scoreboard();
+            playerScoreboards.put(p, sb);
 
-        for (String cat : categories) {
-            JLabel pl = new JLabel(cat + ": -");
-            pl.setFont(new Font("Arial", Font.PLAIN, 16));
-            scoreboardPanel.add(pl);
-            categoryLabels.put(cat, pl);
+            JPanel panel = new JPanel();
+            panel.setLayout(new GridLayout(14, 1));
+            panel.setBorder(BorderFactory.createTitledBorder(p.getName()));
 
-            JLabel cl = new JLabel(cat + ": -");
-            cl.setFont(new Font("Arial", Font.PLAIN, 16));
-            computerScoreboardPanel.add(cl);
-            computerCategoryLabels.put(cat, cl);
+            Map<String, JLabel> labels = new HashMap<>();
+            List<String> categories = Arrays.asList(
+                "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
+                "Three of a Kind", "Four of a Kind", "Full House",
+                "Small Straight", "Large Straight", "Yahtzee", "Chance"
+            );
+            for (String cat : categories) {
+                JLabel label = new JLabel(cat + ": -");
+                label.setFont(new Font("Arial", Font.PLAIN, 16));
+                panel.add(label);
+                labels.put(cat, label);
+            }
+            JLabel total = new JLabel("Total Score: 0");
+            total.setFont(new Font("Arial", Font.BOLD, 18));
+            panel.add(total);
+            labels.put("Total", total);
+
+            playerScoreboardLabels.put(p, labels);
+
+            allScoreboardsPanel.add(panel);
         }
 
-        JLabel total1 = new JLabel("Total Score: 0");
-        total1.setFont(new Font("Arial", Font.BOLD, 18));
-        scoreboardPanel.add(total1);
-        categoryLabels.put("Total", total1);
-
-        JLabel total2 = new JLabel("Total Score: 0");
-        total2.setFont(new Font("Arial", Font.BOLD, 18));
-        computerScoreboardPanel.add(total2);
-        computerCategoryLabels.put("Total", total2);
-
-        JPanel rightPanel = new JPanel(new GridLayout(2, 1));
-        rightPanel.add(scoreboardPanel);
-        rightPanel.add(computerScoreboardPanel);
-        add(rightPanel, BorderLayout.EAST);
+        JScrollPane scrollPane = new JScrollPane(allScoreboardsPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        add(scrollPane, BorderLayout.EAST);
     }
 
     public void rollDice() {
+        if (!(currentPlayer.getType() == Player.PlayerType.HUMAN)) {
+            JOptionPane.showMessageDialog(this, "It is not your turn to roll!");
+            return;
+        }
         if (!currentPlayer.ifcanroll()) {
             JOptionPane.showMessageDialog(this, "You cannot roll more than 3 times. Please score.");
             return;
@@ -159,9 +194,14 @@ public class View extends JFrame {
     }
 
     public void scoreDice() {
+        if (!(currentPlayer.getType() == Player.PlayerType.HUMAN)) {
+            JOptionPane.showMessageDialog(this, "It is not your turn to score!");
+            return;
+        }
+
         ArrayList<Dice> currentDice = cup.getInDice();
         Map<String, Integer> possibleScores = scoreCalculator.evaluate(currentDice);
-        ArrayList<String> availableCategories = scoreboard.getRemainingCategories();
+        ArrayList<String> availableCategories = playerScoreboards.get(currentPlayer).getRemainingCategories();
         Map<String, Integer> filteredScores = new LinkedHashMap<>();
 
         List<String> order = Arrays.asList(
@@ -180,7 +220,6 @@ public class View extends JFrame {
         int chosenScore = 0;
 
         if (filteredScores.isEmpty()) {
-            // 🚨 No good categories => pick any available and score 0
             String[] options = availableCategories.toArray(new String[0]);
             chosenCategory = (String) JOptionPane.showInputDialog(
                 this,
@@ -193,7 +232,6 @@ public class View extends JFrame {
             );
             chosenScore = 0;
         } else {
-            // 😎 Normal: pick a good scoring category
             String[] options = filteredScores.keySet().toArray(new String[0]);
             chosenCategory = (String) JOptionPane.showInputDialog(
                 this,
@@ -209,57 +247,95 @@ public class View extends JFrame {
 
         if (chosenCategory == null) return;
 
-        scoreboard.setScore(chosenCategory, chosenScore);
-        updateScoreboardDisplay();
+        Scoreboard currentBoard = playerScoreboards.get(currentPlayer);
+        currentBoard.setScore(chosenCategory, chosenScore);
+
+        updatePlayerScoreboardDisplay(currentPlayer);
+
         JOptionPane.showMessageDialog(this, "Scored " + chosenScore + " in " + chosenCategory + "!");
 
         rollButton.setEnabled(true);
-        currentPlayer.resetRollCount();
         resetDiceButtons();
+        cup = new Cup(); // reset
 
-        if (scoreboard.getRemainingCategories().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "🎉 Game Over! Final Score: " + scoreboard.getTotalScore());
+        nextTurn();
+    }
+
+    private void updatePlayerScoreboardDisplay(Player p) {
+        Scoreboard sb = playerScoreboards.get(p);
+        Map<String, JLabel> labels = playerScoreboardLabels.get(p);
+
+        for (String cat : labels.keySet()) {
+            if (cat.equals("Total")) {
+                labels.get(cat).setText("Total Score: " + sb.getTotalScore());
+            } else {
+                Integer val = sb.getScores().get(cat);
+                labels.get(cat).setText(cat + ": " + (val == null ? "-" : val));
+            }
+        }
+    }
+
+    private void nextTurn() {
+        // Step 1: Move to the next player
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        currentPlayer = players.get(currentPlayerIndex);
+
+        // Step 2: Update Turn Label
+        turnLabel.setText("Current Turn: " + currentPlayer.getName());
+
+        // Step 3: Check if Human or Computer
+        if (currentPlayer.getType() == Player.PlayerType.HUMAN) {
+            // Human needs to manually roll and score
+            JOptionPane.showMessageDialog(this, currentPlayer.getName() + "'s turn!");
+            rollButton.setEnabled(true);
+            scoreButton.setEnabled(true);
+            resetDiceButtons();
+            cup = new Cup(); // Reset dice cup for human
+        } else {
+            // Computer auto-plays after short delay
             rollButton.setEnabled(false);
             scoreButton.setEnabled(false);
-            return;
-        }
 
-        // === Computer Turn ===
-        computerPlayer.roll(computerScoreboard);
-        ArrayList<Dice> cd = new ArrayList<>();
-        if (computerPlayer instanceof ComputerEasy) {
-            cd.addAll(((ComputerEasy)computerPlayer).getCurrentDice());
-        } else if (computerPlayer instanceof ComputerHard) {
-            cd.addAll(((ComputerHard)computerPlayer).getCurrentDice());
+            // Show "Computer is thinking..." popup first
+            JOptionPane.showMessageDialog(this, "🤖 Wait... Computer is thinking...");
+
+            // Start a short timer before computer plays
+            Timer timer = new Timer(1000, e -> {
+                if (currentPlayer instanceof ComputerEasy) {
+                    ((ComputerEasy) currentPlayer).roll(playerScoreboards.get(currentPlayer));
+                } else if (currentPlayer instanceof ComputerHard) {
+                    ((ComputerHard) currentPlayer).roll(playerScoreboards.get(currentPlayer));
+                }
+
+                // After computer finishes playing, move to next player
+                nextTurn();
+            });
+            timer.setRepeats(false);
+            timer.start();
         }
-        for (int i = 0; i < cd.size(); i++) {
-            computerDiceLabels[i].setText(String.valueOf(cd.get(i).getCurrentValue().ordinal() + 1));
-        }
-        updateComputerScoreboardDisplay();
     }
 
 
-    private void updateScoreboardDisplay() {
-        for (String cat : categoryLabels.keySet()) {
-            if (cat.equals("Total")) {
-                categoryLabels.get(cat).setText("Total Score: " + scoreboard.getTotalScore());
-            } else {
-                Integer val = scoreboard.getScores().get(cat);
-                categoryLabels.get(cat).setText(cat + ": " + (val == null ? "-" : val));
+    private void playComputerTurn() {
+        // Show quick popup
+        JOptionPane.showMessageDialog(this, "🤖 Wait... Computer is thinking...");
+
+        // Start a 1 second timer before the computer actually plays
+        Timer timer = new Timer(1000, e -> {
+            if (currentPlayer instanceof ComputerEasy) {
+                ((ComputerEasy) currentPlayer).roll(playerScoreboards.get(currentPlayer));
+            } else if (currentPlayer instanceof ComputerHard) {
+                ((ComputerHard) currentPlayer).roll(playerScoreboards.get(currentPlayer));
             }
-        }
+
+            // After computer finishes playing, move to next player
+            nextTurn();
+        });
+        timer.setRepeats(false); // only fire once
+        timer.start();
     }
 
-    private void updateComputerScoreboardDisplay() {
-        for (String cat : computerCategoryLabels.keySet()) {
-            if (cat.equals("Total")) {
-                computerCategoryLabels.get(cat).setText("Total Score: " + computerScoreboard.getTotalScore());
-            } else {
-                Integer val = computerScoreboard.getScores().get(cat);
-                computerCategoryLabels.get(cat).setText(cat + ": " + (val == null ? "-" : val));
-            }
-        }
-    }
+
 
     private void resetDiceButtons() {
         for (JToggleButton btn : diceButtons) {
@@ -269,22 +345,145 @@ public class View extends JFrame {
         cup = new Cup();
     }
 
-    public void startNewGame() {
-        currentPlayer.resetRollCount();
-        cup = new Cup();
-        scoreboard = new Scoreboard();
-        computerScoreboard = new Scoreboard();
-        updateScoreboardDisplay();
-        updateComputerScoreboardDisplay();
-        resetDiceButtons();
-        rollButton.setEnabled(true);
-        scoreButton.setEnabled(true);
-    }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             View gui = new View();
             gui.setVisible(true);
         });
     }
+    
+    public void startNewGame() {
+        // === Step 0: Update Win/Loss Records if there was a previous game
+        if (!players.isEmpty()) {
+            Player winner = null;
+            int maxScore = Integer.MIN_VALUE;
+            for (Player p : players) {
+                Scoreboard sb = playerScoreboards.get(p);
+                if (sb.getTotalScore() > maxScore) {
+                    maxScore = sb.getTotalScore();
+                    winner = p;
+                }
+            }
+
+            if (winner != null) {
+                model.recordWin(winner);
+                for (Player p : players) {
+                    if (p != winner) {
+                        model.recordLoss(p);
+                    }
+                }
+            }
+
+            // === Show Win/Loss Popup after the game
+            StringBuilder stats = new StringBuilder("🏆 Game Over! Current Stats:\n");
+            for (Player p : model.getAllPlayers()) {
+                int wins = model.getWins(p);
+                int losses = model.getLosses(p);
+                stats.append(p.getName()).append(": ").append(wins).append(" Wins, ").append(losses).append(" Losses\n");
+            }
+            JOptionPane.showMessageDialog(this, stats.toString());
+        }
+
+        // === Step 1: Reset all game data
+        players.clear();
+        playerScoreboards.clear();
+        playerScoreboardLabels.clear();
+        allScoreboardsPanel.removeAll();
+
+        // === Step 2: Ask for new players
+        String humanInput = JOptionPane.showInputDialog(this, "Enter number of human players:");
+        if (humanInput == null) System.exit(0);
+        int numHumans = Integer.parseInt(humanInput);
+
+        String aiInput = JOptionPane.showInputDialog(this, "Enter number of computer players:");
+        if (aiInput == null) System.exit(0);
+        int numAIs = Integer.parseInt(aiInput);
+
+        for (int i = 1; i <= numHumans; i++) {
+            Player p = new Player("Human " + i, Player.PlayerType.HUMAN);
+            players.add(p);
+            model.addPlayer(p); // ✅ New: update Model
+        }
+
+        for (int i = 1; i <= numAIs; i++) {
+            String[] difficulties = { "Easy", "Hard" };
+            String choice = (String) JOptionPane.showInputDialog(
+                    this,
+                    "Choose difficulty for Computer " + i + ":",
+                    "Difficulty Selection",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    difficulties,
+                    difficulties[0]
+            );
+            if (choice == null) System.exit(0);
+
+            Player p;
+            if (choice.equals("Easy")) {
+                p = new ComputerEasy();
+            } else {
+                p = new ComputerHard();
+            }
+            
+            // ✅ After creating, immediately reset their cup!
+            if (p instanceof ComputerEasy) {
+                ((ComputerEasy) p).resetCup();
+            } else if (p instanceof ComputerHard) {
+                ((ComputerHard) p).resetCup();
+            }
+
+            players.add(p);
+            model.addPlayer(p);
+        }
+
+
+
+        // === Step 3: Create new scoreboards
+        allScoreboardsPanel.setLayout(new GridLayout(players.size(), 1));
+        for (Player p : players) {
+            Scoreboard sb = new Scoreboard();
+            playerScoreboards.put(p, sb);
+
+            JPanel panel = new JPanel(new GridLayout(14, 1));
+            panel.setBorder(BorderFactory.createTitledBorder(p.getName()));
+
+            Map<String, JLabel> labels = new HashMap<>();
+            List<String> categories = Arrays.asList(
+                "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
+                "Three of a Kind", "Four of a Kind", "Full House",
+                "Small Straight", "Large Straight", "Yahtzee", "Chance"
+            );
+            for (String cat : categories) {
+                JLabel label = new JLabel(cat + ": -");
+                label.setFont(new Font("Arial", Font.PLAIN, 16));
+                panel.add(label);
+                labels.put(cat, label);
+            }
+            JLabel total = new JLabel("Total Score: 0");
+            total.setFont(new Font("Arial", Font.BOLD, 18));
+            panel.add(total);
+            labels.put("Total", total);
+
+            playerScoreboardLabels.put(p, labels);
+
+            allScoreboardsPanel.add(panel);
+        }
+
+        allScoreboardsPanel.revalidate();
+        allScoreboardsPanel.repaint();
+
+        // === Step 4: Reset turn and dice
+        currentPlayerIndex = 0;
+        currentPlayer = players.get(0);
+        cup = new Cup();
+        resetDiceButtons();
+
+        rollButton.setEnabled(true);
+        scoreButton.setEnabled(true);
+
+        turnLabel.setText("Current Turn: " + currentPlayer.getName());
+        
+    }
+
+
 }

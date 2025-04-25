@@ -2,11 +2,11 @@ package proj;
 
 import java.util.*;
 
-public class ComputerHard implements Computer{
+public class ComputerHard extends Player implements Computer{
 	private Cup cup;
 	public ComputerHard() {
-		this.cup = new Cup();
-	}
+        super("Computer Hard", Player.PlayerType.COMPUTER);
+    }
 	// This method removes all dice of a select value
 	private void removeSimilar(ArrayList<Dice> inDice, int value) {
 		ArrayList<Dice> toMove = new ArrayList<>();
@@ -187,6 +187,10 @@ public class ComputerHard implements Computer{
 	    allDice.addAll(cup.getInDice());
 	    allDice.addAll(cup.getOutDice());
 	    return allDice;
+	}
+
+	public void resetCup() {
+	    this.cup = new Cup();
 	}
 
 
