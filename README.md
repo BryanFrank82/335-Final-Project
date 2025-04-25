@@ -97,4 +97,6 @@ There are two types of players:
 **Avoidance of antipatterns**
 1. **Encapsulation & Information Hiding**
     - Each core component (e.g. Dice, Cup, Scoreboard) strictly exposes only the minimal public API needed for clients, while relegating all mutable state and internal algorithms to private members. By bundling  the roll logic, face‐value storage, and reset behavior behind well‐defined method boundaries, we enforce high cohesion within each class and loose coupling between modules. We create copies of any ArrayLists that we return and ensure that the Dice class is immutable to avoid encapsulation issues with escaping Dice references.
+2. **Defensive Programming & Input Validation**
+    - All client‐facing methods validate their inputs and enforce fail‐fast behavior. For example, Scoreboard.setScore(...) checks that the category exists and hasn’t already been scored, throwing an IllegalArgumentException on invalid calls. Constructors and setters guard against null parameters, and public collections are wrapped in Collections.unmodifiable… to prevent callers from injecting malformed data.
 
