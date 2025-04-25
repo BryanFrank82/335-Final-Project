@@ -15,11 +15,10 @@ public class View extends JFrame {
 
     private JButton rollButton, scoreButton, newGameButton;
     private JToggleButton[] diceButtons;
-    private JLabel[] computerDiceLabels;
     private JLabel turnLabel;
 
     private Cup cup = new Cup();
-    private JPanel playerDicePanel, computerDicePanel;
+    private JPanel playerDicePanel;
     private JPanel allScoreboardsPanel;
 
     private ArrayList<Player> players = new ArrayList<>();
@@ -39,7 +38,8 @@ public class View extends JFrame {
     private final ImageIcon die6Icon;
 
     public View() {
-    	int iconWidth = 85;  // or whatever fits your UI
+    	
+    	int iconWidth = 85;  
     	int iconHeight = 85;
 
     	die1Icon = loadScaledIcon("/images/dice1.png", iconWidth, iconHeight);
@@ -48,7 +48,7 @@ public class View extends JFrame {
     	die4Icon = loadScaledIcon("/images/dice4.png", iconWidth, iconHeight);
     	die5Icon = loadScaledIcon("/images/dice5.png", iconWidth, iconHeight);
     	die6Icon = loadScaledIcon("/images/dice6.png", iconWidth, iconHeight);
-    	
+
         PlayerLibrary library = new PlayerLibrary();
 
         // Setup players
@@ -61,7 +61,11 @@ public class View extends JFrame {
         int numAIs = Integer.parseInt(aiInput);
 
         for (int i = 1; i <= numHumans; i++) {
-            Player p = new Player("Human " + i, Player.PlayerType.HUMAN);
+            String name = JOptionPane.showInputDialog(this, "Enter name for Human Player " + i + ":");
+            if (name == null || name.trim().isEmpty()) {
+                name = "Human " + i;
+            }
+            Player p = new Player(name, Player.PlayerType.HUMAN);
             players.add(p);
             library.addPlayer(p);
         }
@@ -104,12 +108,6 @@ public class View extends JFrame {
         setupUI();
         turnLabel.setText("Current Turn: " + currentPlayer.getName());
     }
-    
-    private ImageIcon loadScaledIcon(String path, int width, int height) {
-        ImageIcon original = new ImageIcon(getClass().getResource(path));
-        Image scaledImage = original.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-        return new ImageIcon(scaledImage);
-    }
 
     private void setupUI() {
         setTitle("Yahtzee Game");
@@ -129,17 +127,8 @@ public class View extends JFrame {
             playerDicePanel.add(diceButtons[i]);
         }
 
-        computerDicePanel = new JPanel(new GridLayout(1, 5));
-        computerDiceLabels = new JLabel[5];
-        for (int i = 0; i < 5; i++) {
-            computerDiceLabels[i] = new JLabel("?", SwingConstants.CENTER);
-            computerDiceLabels[i].setFont(new Font("Arial", Font.BOLD, 36));
-            computerDicePanel.add(computerDiceLabels[i]);
-        }
-
-        JPanel centerPanel = new JPanel(new GridLayout(2, 1));
+        JPanel centerPanel = new JPanel(new GridLayout(1, 1));
         centerPanel.add(playerDicePanel);
-        centerPanel.add(computerDicePanel);
         add(centerPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
@@ -193,24 +182,6 @@ public class View extends JFrame {
         JScrollPane scrollPane = new JScrollPane(allScoreboardsPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         add(scrollPane, BorderLayout.EAST);
-    }
-    
-    private void setDieIcon(JComponent comp, int faceValue) {
-    	 ImageIcon icon = switch (faceValue) {
-         case 1 -> die1Icon;
-         case 2 -> die2Icon;
-         case 3 -> die3Icon;
-         case 4 -> die4Icon;
-         case 5 -> die5Icon;
-         case 6 -> die6Icon;
-         default -> null;
-     };
-
-     if (comp instanceof JLabel label) {
-         label.setIcon(icon);
-     } else if (comp instanceof AbstractButton button) {
-         button.setIcon(icon);
-     }
     }
 
     public void rollDice() {
@@ -351,39 +322,15 @@ public class View extends JFrame {
                 } else if (currentPlayer instanceof ComputerHard) {
                     ((ComputerHard) currentPlayer).roll(playerScoreboards.get(currentPlayer));
                 }
-                
-                updatePlayerScoreboardDisplay(currentPlayer); // ✅ ADD THIS!!
 
-
+                updatePlayerScoreboardDisplay(currentPlayer);
                 // After computer finishes playing, move to next player
                 nextTurn();
             });
             timer.setRepeats(false);
             timer.start();
-            }
         }
-
-
-    private void playComputerTurn() {
-        // Show quick popup
-        JOptionPane.showMessageDialog(this, "🤖 Wait... Computer is thinking...");
-
-        // Start a 1 second timer before the computer actually plays
-        Timer timer = new Timer(1000, e -> {
-            if (currentPlayer instanceof ComputerEasy) {
-                ((ComputerEasy) currentPlayer).roll(playerScoreboards.get(currentPlayer));
-            } else if (currentPlayer instanceof ComputerHard) {
-                ((ComputerHard) currentPlayer).roll(playerScoreboards.get(currentPlayer));
-            }
-
-            // After computer finishes playing, move to next player
-            nextTurn();
-        });
-        timer.setRepeats(false); // only fire once
-        timer.start();
     }
-
-
 
     private void resetDiceButtons() {
         for (JToggleButton btn : diceButtons) {
@@ -532,6 +479,30 @@ public class View extends JFrame {
 
         turnLabel.setText("Current Turn: " + currentPlayer.getName());
         
+    }
+    
+    private void setDieIcon(JComponent comp, int faceValue) {
+   	 ImageIcon icon = switch (faceValue) {
+        case 1 -> die1Icon;
+        case 2 -> die2Icon;
+        case 3 -> die3Icon;
+        case 4 -> die4Icon;
+        case 5 -> die5Icon;
+        case 6 -> die6Icon;
+        default -> null;
+    };
+
+    if (comp instanceof JLabel label) {
+        label.setIcon(icon);
+    } else if (comp instanceof AbstractButton button) {
+        button.setIcon(icon);
+    }
+   }
+
+    private ImageIcon loadScaledIcon(String path, int width, int height) {
+    	ImageIcon original = new ImageIcon(getClass().getResource(path));
+    	Image scaledImage = original.getImage().getScaledInstance(width,height,Image.SCALE_SMOOTH);
+    	return new ImageIcon(scaledImage);
     }
 
 
