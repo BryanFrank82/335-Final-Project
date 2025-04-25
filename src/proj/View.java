@@ -21,7 +21,7 @@ public class View extends JFrame {
     private JPanel playerDicePanel;
     private JPanel allScoreboardsPanel;
 
-    private ArrayList<Player> players = new ArrayList<>();
+    private GameBoard gameBoard;
     private int currentPlayerIndex = 0;
     private Player currentPlayer;
 
@@ -38,20 +38,31 @@ public class View extends JFrame {
     private final ImageIcon die6Icon;
 
     public View() {
-    	
-    	int iconWidth = 85;  
-    	int iconHeight = 85;
-
-    	die1Icon = loadScaledIcon("/images/dice1.png", iconWidth, iconHeight);
-    	die2Icon = loadScaledIcon("/images/dice2.png", iconWidth, iconHeight);
-    	die3Icon = loadScaledIcon("/images/dice3.png", iconWidth, iconHeight);
-    	die4Icon = loadScaledIcon("/images/dice4.png", iconWidth, iconHeight);
-    	die5Icon = loadScaledIcon("/images/dice5.png", iconWidth, iconHeight);
-    	die6Icon = loadScaledIcon("/images/dice6.png", iconWidth, iconHeight);
+        int iconWidth = 85, iconHeight = 85;
+        die1Icon = loadScaledIcon("/images/dice1.png", iconWidth, iconHeight);
+        die2Icon = loadScaledIcon("/images/dice2.png", iconWidth, iconHeight);
+        die3Icon = loadScaledIcon("/images/dice3.png", iconWidth, iconHeight);
+        die4Icon = loadScaledIcon("/images/dice4.png", iconWidth, iconHeight);
+        die5Icon = loadScaledIcon("/images/dice5.png", iconWidth, iconHeight);
+        die6Icon = loadScaledIcon("/images/dice6.png", iconWidth, iconHeight);
 
         PlayerLibrary library = new PlayerLibrary();
+        gameBoard = new GameBoard(library);
+        model = new Model();
 
-        // Setup players
+        setupPlayers(library);
+
+        gameBoard.getOrder();
+        currentPlayerIndex = 0;
+        currentPlayer = gameBoard.getPlayers().get(currentPlayerIndex);
+
+        controller = new Controller(model, this);
+        setupUI();
+
+        turnLabel.setText("Current Turn: " + currentPlayer.getName());
+    }
+    
+    private void setupPlayers(PlayerLibrary library) {
         String humanInput = JOptionPane.showInputDialog(this, "Enter number of human players:");
         if (humanInput == null) System.exit(0);
         int numHumans = Integer.parseInt(humanInput);
@@ -62,52 +73,27 @@ public class View extends JFrame {
 
         for (int i = 1; i <= numHumans; i++) {
             String name = JOptionPane.showInputDialog(this, "Enter name for Human Player " + i + ":");
-            if (name == null || name.trim().isEmpty()) {
-                name = "Human " + i;
-            }
+            if (name == null || name.trim().isEmpty()) name = "Human " + i;
             Player p = new Player(name, Player.PlayerType.HUMAN);
-            players.add(p);
             library.addPlayer(p);
+            gameBoard.addPlayer(p);
         }
 
         for (int i = 1; i <= numAIs; i++) {
             String[] difficulties = { "Easy", "Hard" };
-            String choice = (String) JOptionPane.showInputDialog(
-                    this,
-                    "Choose difficulty for Computer " + i + ":",
-                    "Difficulty Selection",
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    difficulties,
-                    difficulties[0]
-            );
+            String choice = (String) JOptionPane.showInputDialog(this, "Choose difficulty for Computer " + i + ":",
+                    "Difficulty Selection", JOptionPane.QUESTION_MESSAGE, null, difficulties, difficulties[0]);
             if (choice == null) System.exit(0);
 
-            Player p;
-            if (choice.equals("Easy")) {
-                p = new ComputerEasy();
-            } else {
-                p = new ComputerHard();
-            }
+            Player p = choice.equals("Easy") ? new ComputerEasy() : new ComputerHard();
+            if (p instanceof ComputerEasy ce) ce.resetCup();
+            if (p instanceof ComputerHard ch) ch.resetCup();
 
-            // ✅ After creating, immediately reset their cup
-            if (p instanceof ComputerEasy) {
-                ((ComputerEasy) p).resetCup();
-            } else if (p instanceof ComputerHard) {
-                ((ComputerHard) p).resetCup();
-            }
-
-            players.add(p);
             library.addPlayer(p);
+            gameBoard.addPlayer(p);
         }
-
-        currentPlayer = players.get(0);
-        model = new Model();
-        controller = new Controller(model, this);
-
-        setupUI();
-        turnLabel.setText("Current Turn: " + currentPlayer.getName());
     }
+
 
     private void setupUI() {
         setTitle("Yahtzee Game");
@@ -135,26 +121,27 @@ public class View extends JFrame {
         rollButton = new JButton("Roll");
         rollButton.setActionCommand("ROLL");
         rollButton.addActionListener(controller);
+
         scoreButton = new JButton("Score");
         scoreButton.setActionCommand("SCORE");
         scoreButton.addActionListener(controller);
+
         newGameButton = new JButton("New Game");
         newGameButton.setActionCommand("NEW_GAME");
         newGameButton.addActionListener(controller);
+
         buttonPanel.add(rollButton);
         buttonPanel.add(scoreButton);
         buttonPanel.add(newGameButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        allScoreboardsPanel = new JPanel();
-        allScoreboardsPanel.setLayout(new GridLayout(players.size(), 1));
+        allScoreboardsPanel = new JPanel(new GridLayout(gameBoard.getPlayers().size(), 1));
 
-        for (Player p : players) {
+        for (Player p : gameBoard.getPlayers()) {
             Scoreboard sb = new Scoreboard();
             playerScoreboards.put(p, sb);
 
-            JPanel panel = new JPanel();
-            panel.setLayout(new GridLayout(14, 1));
+            JPanel panel = new JPanel(new GridLayout(14, 1));
             panel.setBorder(BorderFactory.createTitledBorder(p.getName()));
 
             Map<String, JLabel> labels = new HashMap<>();
@@ -163,19 +150,20 @@ public class View extends JFrame {
                 "Three of a Kind", "Four of a Kind", "Full House",
                 "Small Straight", "Large Straight", "Yahtzee", "Chance"
             );
+
             for (String cat : categories) {
                 JLabel label = new JLabel(cat + ": -");
                 label.setFont(new Font("Arial", Font.PLAIN, 16));
                 panel.add(label);
                 labels.put(cat, label);
             }
+
             JLabel total = new JLabel("Total Score: 0");
             total.setFont(new Font("Arial", Font.BOLD, 18));
             panel.add(total);
             labels.put("Total", total);
 
             playerScoreboardLabels.put(p, labels);
-
             allScoreboardsPanel.add(panel);
         }
 
@@ -185,14 +173,16 @@ public class View extends JFrame {
     }
 
     public void rollDice() {
-        if (!(currentPlayer.getType() == Player.PlayerType.HUMAN)) {
+        if (currentPlayer.getType() != Player.PlayerType.HUMAN) {
             JOptionPane.showMessageDialog(this, "It is not your turn to roll!");
             return;
         }
+
         if (!currentPlayer.ifcanroll()) {
             JOptionPane.showMessageDialog(this, "You cannot roll more than 3 times. Please score.");
             return;
         }
+
         ArrayList<Dice> inDice = cup.getInDice();
         for (int i = 0; i < inDice.size(); i++) {
             if (!diceButtons[i].isSelected()) {
@@ -201,16 +191,18 @@ public class View extends JFrame {
             int face = inDice.get(i).getCurrentValue().ordinal() + 1;
             setDieIcon(diceButtons[i], face);
             diceButtons[i].setText(null);
-
         }
+
         currentPlayer.incrementRollCount();
+
         if (!currentPlayer.ifcanroll()) {
             rollButton.setEnabled(false);
         }
     }
 
+
     public void scoreDice() {
-        if (!(currentPlayer.getType() == Player.PlayerType.HUMAN)) {
+        if (currentPlayer.getType() != Player.PlayerType.HUMAN) {
             JOptionPane.showMessageDialog(this, "It is not your turn to score!");
             return;
         }
@@ -232,8 +224,8 @@ public class View extends JFrame {
             }
         }
 
-        String chosenCategory = null;
-        int chosenScore = 0;
+        String chosenCategory;
+        int chosenScore;
 
         if (filteredScores.isEmpty()) {
             String[] options = availableCategories.toArray(new String[0]);
@@ -274,16 +266,15 @@ public class View extends JFrame {
         resetDiceButtons();
         cup = new Cup(); // reset
 
-        // 🚀 Here: check for Game Over
         if (isGameOver()) {
             showLeaderboard();
             startNewGame();
         } else {
-        	currentPlayer.resetRollCount();
+            currentPlayer.resetRollCount();
             nextTurn();
         }
-
     }
+
 
     private void updatePlayerScoreboardDisplay(Player p) {
         Scoreboard sb = playerScoreboards.get(p);
@@ -301,8 +292,8 @@ public class View extends JFrame {
 
     private void nextTurn() {
         // Step 1: Move to the next player
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        currentPlayer = players.get(currentPlayerIndex);
+        currentPlayerIndex = (currentPlayerIndex + 1) % gameBoard.getPlayers().size();
+        currentPlayer = gameBoard.getPlayers().get(currentPlayerIndex);
 
         // Step 2: Update Turn Label
         turnLabel.setText("Current Turn: " + currentPlayer.getName());
@@ -325,6 +316,16 @@ public class View extends JFrame {
 
             // Start a short timer before computer plays
             Timer timer = new Timer(1000, e -> {
+                // 🚀 Roll Dice visually
+                ArrayList<Dice> diceList = cup.getInDice();
+                for (int i = 0; i < diceList.size(); i++) {
+                    int face = diceList.get(i).getCurrentValue().ordinal() + 1;
+                    setDieIcon(diceButtons[i], face);
+                    diceButtons[i].setSelected(false);
+                    diceButtons[i].setEnabled(false);
+                }
+
+                // 🚀 Then Computer actually rolls and scores
                 if (currentPlayer instanceof ComputerEasy) {
                     ((ComputerEasy) currentPlayer).roll(playerScoreboards.get(currentPlayer));
                 } else if (currentPlayer instanceof ComputerHard) {
@@ -333,7 +334,6 @@ public class View extends JFrame {
 
                 updatePlayerScoreboardDisplay(currentPlayer);
 
-                // 🚀 Here: check for Game Over
                 if (isGameOver()) {
                     showLeaderboard();
                     startNewGame();
@@ -343,18 +343,19 @@ public class View extends JFrame {
             });
             timer.setRepeats(false);
             timer.start();
-
         }
     }
 
     private void resetDiceButtons() {
         for (JToggleButton btn : diceButtons) {
             btn.setSelected(false);
+            btn.setEnabled(true);
             btn.setIcon(null);
             btn.setText("?");
         }
         cup = new Cup();
     }
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -364,11 +365,11 @@ public class View extends JFrame {
     }
     
     public void startNewGame() {
-        // === Step 0: Update Win/Loss Records if there was a previous game
-        if (!players.isEmpty()) {
+        // Step 0: Update Win/Loss Records if previous game existed
+        if (!gameBoard.getPlayers().isEmpty()) {
             Player winner = null;
             int maxScore = Integer.MIN_VALUE;
-            for (Player p : players) {
+            for (Player p : gameBoard.getPlayers()) {
                 Scoreboard sb = playerScoreboards.get(p);
                 if (sb.getTotalScore() > maxScore) {
                     maxScore = sb.getTotalScore();
@@ -378,15 +379,15 @@ public class View extends JFrame {
 
             if (winner != null) {
                 model.recordWin(winner);
-                for (Player p : players) {
+                for (Player p : gameBoard.getPlayers()) {
                     if (p != winner) {
                         model.recordLoss(p);
                     }
                 }
             }
 
-            // === Show Win/Loss Popup after the game
-            StringBuilder stats = new StringBuilder("🏆 Game Over! Current Stats:\n");
+            // Show Win/Loss Popup
+            StringBuilder stats = new StringBuilder("🏆 Game Over! Current Stats:\n\n");
             for (Player p : model.getAllPlayers()) {
                 int wins = model.getWins(p);
                 int losses = model.getLosses(p);
@@ -395,63 +396,13 @@ public class View extends JFrame {
             JOptionPane.showMessageDialog(this, stats.toString());
         }
 
-        // === Step 1: Reset all game data
-        players.clear();
+        // Step 1: Clear old data
         playerScoreboards.clear();
         playerScoreboardLabels.clear();
         allScoreboardsPanel.removeAll();
 
-        // === Step 2: Ask for new players
-        String humanInput = JOptionPane.showInputDialog(this, "Enter number of human players:");
-        if (humanInput == null) System.exit(0);
-        int numHumans = Integer.parseInt(humanInput);
-
-        String aiInput = JOptionPane.showInputDialog(this, "Enter number of computer players:");
-        if (aiInput == null) System.exit(0);
-        int numAIs = Integer.parseInt(aiInput);
-
-        for (int i = 1; i <= numHumans; i++) {
-            Player p = new Player("Human " + i, Player.PlayerType.HUMAN);
-            players.add(p);
-            model.addPlayer(p); // ✅ New: update Model
-        }
-
-        for (int i = 1; i <= numAIs; i++) {
-            String[] difficulties = { "Easy", "Hard" };
-            String choice = (String) JOptionPane.showInputDialog(
-                    this,
-                    "Choose difficulty for Computer " + i + ":",
-                    "Difficulty Selection",
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    difficulties,
-                    difficulties[0]
-            );
-            if (choice == null) System.exit(0);
-
-            Player p;
-            if (choice.equals("Easy")) {
-                p = new ComputerEasy();
-            } else {
-                p = new ComputerHard();
-            }
-            
-            // ✅ After creating, immediately reset their cup!
-            if (p instanceof ComputerEasy) {
-                ((ComputerEasy) p).resetCup();
-            } else if (p instanceof ComputerHard) {
-                ((ComputerHard) p).resetCup();
-            }
-
-            players.add(p);
-            model.addPlayer(p);
-        }
-
-
-
-        // === Step 3: Create new scoreboards
-        allScoreboardsPanel.setLayout(new GridLayout(players.size(), 1));
-        for (Player p : players) {
+        // Step 2: Re-use same players (don't re-ask!)
+        for (Player p : gameBoard.getPlayers()) {
             Scoreboard sb = new Scoreboard();
             playerScoreboards.put(p, sb);
 
@@ -464,28 +415,29 @@ public class View extends JFrame {
                 "Three of a Kind", "Four of a Kind", "Full House",
                 "Small Straight", "Large Straight", "Yahtzee", "Chance"
             );
+
             for (String cat : categories) {
                 JLabel label = new JLabel(cat + ": -");
                 label.setFont(new Font("Arial", Font.PLAIN, 16));
                 panel.add(label);
                 labels.put(cat, label);
             }
+
             JLabel total = new JLabel("Total Score: 0");
             total.setFont(new Font("Arial", Font.BOLD, 18));
             panel.add(total);
             labels.put("Total", total);
 
             playerScoreboardLabels.put(p, labels);
-
             allScoreboardsPanel.add(panel);
         }
 
         allScoreboardsPanel.revalidate();
         allScoreboardsPanel.repaint();
 
-        // === Step 4: Reset turn and dice
+        // Step 3: Reset turn and dice
         currentPlayerIndex = 0;
-        currentPlayer = players.get(0);
+        currentPlayer = gameBoard.getPlayers().get(currentPlayerIndex);
         cup = new Cup();
         resetDiceButtons();
 
@@ -493,8 +445,8 @@ public class View extends JFrame {
         scoreButton.setEnabled(true);
 
         turnLabel.setText("Current Turn: " + currentPlayer.getName());
-        
     }
+
     
     private void setDieIcon(JComponent comp, int faceValue) {
    	 ImageIcon icon = switch (faceValue) {
@@ -521,26 +473,32 @@ public class View extends JFrame {
     }
     
     private boolean isGameOver() {
-        for (Player p : players) {
+        for (Player p : gameBoard.getPlayers()) {
             if (!playerScoreboards.get(p).getRemainingCategories().isEmpty()) {
-                return false; // still some categories left
+                return false; // Still has categories left
             }
         }
-        return true; // all players filled all categories
+        return true; // All players finished all categories
     }
 
+
     private void showLeaderboard() {
-        List<Player> sortedPlayers = new ArrayList<>(players);
+        List<Player> sortedPlayers = new ArrayList<>(gameBoard.getPlayers());
         sortedPlayers.sort((a, b) -> playerScoreboards.get(b).getTotalScore() - playerScoreboards.get(a).getTotalScore());
 
         StringBuilder leaderboard = new StringBuilder("🏆 Final Leaderboard 🏆\n\n");
         for (int i = 0; i < sortedPlayers.size(); i++) {
             Player p = sortedPlayers.get(i);
-            leaderboard.append((i + 1) + ". " + p.getName() + " - " + playerScoreboards.get(p).getTotalScore() + " points\n");
+            leaderboard.append((i + 1) + ". ")
+                       .append(p.getName())
+                       .append(" - ")
+                       .append(playerScoreboards.get(p).getTotalScore())
+                       .append(" points\n");
         }
 
         JOptionPane.showMessageDialog(this, leaderboard.toString());
     }
+
 
 
 }
