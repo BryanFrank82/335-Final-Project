@@ -6,6 +6,8 @@ import java.util.HashMap;
 
 
 public class GameBoard {
+	private Map<Player, Integer> winCounts = new HashMap<>();
+	private Map<Player, Integer> lossCounts = new HashMap<>();
 	private List<Player> players;
 	private int currentIndex;
 	private final PlayerLibrary library;
@@ -83,5 +85,23 @@ public class GameBoard {
 	     players.addAll(computers);
 		 
 	 }
+	 
+
+		public void recordWin(Player p) {
+		    winCounts.put(p, winCounts.getOrDefault(p, 0) + 1);
+		}
+
+		public void recordLoss(Player p) {
+		    lossCounts.put(p, lossCounts.getOrDefault(p, 0) + 1);
+		}
+
+		public int getWins(Player p) {
+		    return winCounts.getOrDefault(p, 0);
+		}
+
+		public int getLosses(Player p) {
+		    return lossCounts.getOrDefault(p, 0);
+		}
+
 
 }

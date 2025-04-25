@@ -4,11 +4,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class Controller implements ActionListener {
-    private Model model;
     private View view;
 
-    public Controller(Model model, View view) {
-        this.model = model;
+    public Controller(View view) {
         this.view = view;
     }
 

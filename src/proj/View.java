@@ -10,7 +10,6 @@ import java.awt.Image;
 import java.util.*;
 
 public class View extends JFrame {
-    private Model model;
     private Controller controller;
 
     private JButton rollButton, scoreButton, newGameButton;
@@ -48,7 +47,6 @@ public class View extends JFrame {
 
         PlayerLibrary library = new PlayerLibrary();
         gameBoard = new GameBoard(library);
-        model = new Model();
 
         setupPlayers(library);
 
@@ -56,7 +54,7 @@ public class View extends JFrame {
         currentPlayerIndex = 0;
         currentPlayer = gameBoard.getPlayers().get(currentPlayerIndex);
 
-        controller = new Controller(model, this);
+        controller = new Controller(this);
         setupUI();
 
         turnLabel.setText("Current Turn: " + currentPlayer.getName());
@@ -378,19 +376,19 @@ public class View extends JFrame {
             }
 
             if (winner != null) {
-                model.recordWin(winner);
+                gameBoard.recordWin(winner); // ✅ Record the winner's win
                 for (Player p : gameBoard.getPlayers()) {
                     if (p != winner) {
-                        model.recordLoss(p);
+                        gameBoard.recordLoss(p); // ✅ Record everyone's loss except winner
                     }
                 }
             }
 
             // Show Win/Loss Popup
             StringBuilder stats = new StringBuilder("🏆 Game Over! Current Stats:\n\n");
-            for (Player p : model.getAllPlayers()) {
-                int wins = model.getWins(p);
-                int losses = model.getLosses(p);
+            for (Player p : gameBoard.getPlayers()) {
+                int wins = gameBoard.getWins(p);
+                int losses = gameBoard.getLosses(p);
                 stats.append(p.getName()).append(": ").append(wins).append(" Wins, ").append(losses).append(" Losses\n");
             }
             JOptionPane.showMessageDialog(this, stats.toString());
