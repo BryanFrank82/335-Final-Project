@@ -78,3 +78,23 @@ There are two types of players:
 | `GameBoard.java`   | Manages the list and order of players |
 
 ---
+1. **Computer STRATEGY Interface**
+    - Computer.java designs an interface with roll() and choose() methods. This allows for multiple implementations of the Computer interface based on what difficult is chosen
+2. **Concrete Strategies**
+
+    - **ComputerEasy** (`proj.strategy.ComputerEasy`)  
+      - Uses a lower score threshold (e.g., 5) to decide when to stop rerolling.  
+      - Chooses randomly among legal scoring categories when no high-value combo exists.  
+
+    - **ComputerHard** (`proj.strategy.ComputerHard`)  
+      - Uses a higher threshold (e.g., 13).  
+      - Prioritizes special combinations (Yahtzee, straights, full house) if threshold met.  
+      - Otherwise picks the category yielding the maximal points.
+---
+1. **Dice FLYWEIGHT Pattern**
+     - The Dice class utilizes a DiceFactory flyweight that creates the Dice objects to be used by the Cup class
+---
+**Avoidance of antipatterns**
+1. **Encapsulation & Information Hiding**
+    - Each core component (e.g. Dice, Cup, Scoreboard) strictly exposes only the minimal public API needed for clients, while relegating all mutable state and internal algorithms to private members. By bundling  the roll logic, face‐value storage, and reset behavior behind well‐defined method boundaries, we enforce high cohesion within each class and loose coupling between modules. We create copies of any ArrayLists that we return and ensure that the Dice class is immutable to avoid encapsulation issues with escaping Dice references.
+
