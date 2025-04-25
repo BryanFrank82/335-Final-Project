@@ -351,24 +351,17 @@ public class View extends JFrame {
                 } else if (currentPlayer instanceof ComputerHard) {
                     ((ComputerHard) currentPlayer).roll(playerScoreboards.get(currentPlayer));
                 }
+                
+                updatePlayerScoreboardDisplay(currentPlayer); // ✅ ADD THIS!!
+
 
                 // After computer finishes playing, move to next player
                 nextTurn();
             });
             timer.setRepeats(false);
             timer.start();
+            }
         }
-<<<<<<< HEAD
-=======
-        for (int i = 0; i < cd.size(); i++) {
-        	int face = cd.get(i).getCurrentValue().ordinal() + 1;
-        	setDieIcon(computerDiceLabels[i], face);
-        	computerDiceLabels[i].setText(null);
-
-        }
-        updateComputerScoreboardDisplay();
->>>>>>> branch 'main' of https://github.com/BryanFrank82/335-Final-Project.git
-    }
 
 
     private void playComputerTurn() {
