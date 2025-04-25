@@ -317,19 +317,21 @@ public class View extends JFrame {
             // Start a short timer before computer plays
             Timer timer = new Timer(1000, e -> {
                 // 🚀 Roll Dice visually
-                ArrayList<Dice> diceList = cup.getInDice();
+            	ArrayList<Dice> diceList = new ArrayList<>();
+
+                // 🚀 Then Computer actually rolls and scores
+                if (currentPlayer instanceof ComputerEasy) {
+                    ((ComputerEasy) currentPlayer).roll(playerScoreboards.get(currentPlayer));
+                    diceList = ((ComputerEasy) currentPlayer).getCurrentDice();
+                } else if (currentPlayer instanceof ComputerHard) {
+                    ((ComputerHard) currentPlayer).roll(playerScoreboards.get(currentPlayer));
+                    diceList = ((ComputerHard) currentPlayer).getCurrentDice();
+                }          
                 for (int i = 0; i < diceList.size(); i++) {
                     int face = diceList.get(i).getCurrentValue().ordinal() + 1;
                     setDieIcon(diceButtons[i], face);
                     diceButtons[i].setSelected(false);
                     diceButtons[i].setEnabled(false);
-                }
-
-                // 🚀 Then Computer actually rolls and scores
-                if (currentPlayer instanceof ComputerEasy) {
-                    ((ComputerEasy) currentPlayer).roll(playerScoreboards.get(currentPlayer));
-                } else if (currentPlayer instanceof ComputerHard) {
-                    ((ComputerHard) currentPlayer).roll(playerScoreboards.get(currentPlayer));
                 }
 
                 updatePlayerScoreboardDisplay(currentPlayer);
