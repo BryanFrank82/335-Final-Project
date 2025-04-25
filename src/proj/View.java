@@ -366,35 +366,45 @@ public class View extends JFrame {
     
     public void startNewGame() {
         // Step 0: Update Win/Loss Records if previous game existed
-        if (!gameBoard.getPlayers().isEmpty()) {
-            Player winner = null;
-            int maxScore = Integer.MIN_VALUE;
-            for (Player p : gameBoard.getPlayers()) {
-                Scoreboard sb = playerScoreboards.get(p);
-                if (sb.getTotalScore() > maxScore) {
-                    maxScore = sb.getTotalScore();
-                    winner = p;
-                }
-            }
+    	if (!gameBoard.getPlayers().isEmpty()) {
+    	    int maxScore = Integer.MIN_VALUE;
+    	    for (Player p : gameBoard.getPlayers()) {
+    	        Scoreboard sb = playerScoreboards.get(p);
+    	        if (sb.getTotalScore() > maxScore) {
+    	            maxScore = sb.getTotalScore();
+    	        }
+    	    }
 
-            if (winner != null) {
-                gameBoard.recordWin(winner); // ✅ Record the winner's win
-                for (Player p : gameBoard.getPlayers()) {
-                    if (p != winner) {
-                        gameBoard.recordLoss(p); // ✅ Record everyone's loss except winner
-                    }
-                }
-            }
+    	    // Find all players who have the max score
+    	    List<Player> winners = new ArrayList<>();
+    	    for (Player p : gameBoard.getPlayers()) {
+    	        if (playerScoreboards.get(p).getTotalScore() == maxScore) {
+    	            winners.add(p);
+    	        }
+    	    }
 
-            // Show Win/Loss Popup
-            StringBuilder stats = new StringBuilder("🏆 Game Over! Current Stats:\n\n");
-            for (Player p : gameBoard.getPlayers()) {
-                int wins = gameBoard.getWins(p);
-                int losses = gameBoard.getLosses(p);
-                stats.append(p.getName()).append(": ").append(wins).append(" Wins, ").append(losses).append(" Losses\n");
-            }
-            JOptionPane.showMessageDialog(this, stats.toString());
-        }
+    	    // ✅ All winners get a win
+    	    for (Player winner : winners) {
+    	        gameBoard.recordWin(winner);
+    	    }
+
+    	    // ✅ All others get a loss
+    	    for (Player p : gameBoard.getPlayers()) {
+    	        if (!winners.contains(p)) {
+    	            gameBoard.recordLoss(p);
+    	        }
+    	    }
+
+    	    // Show correct Win/Loss popup
+    	    StringBuilder stats = new StringBuilder("🏆 Game Over! Current Stats:\n\n");
+    	    for (Player p : gameBoard.getPlayers()) {
+    	        int wins = gameBoard.getWins(p);
+    	        int losses = gameBoard.getLosses(p);
+    	        stats.append(p.getName()).append(": ").append(wins).append(" Wins, ").append(losses).append(" Losses\n");
+    	    }
+    	    JOptionPane.showMessageDialog(this, stats.toString());
+    	}
+
 
         // Step 1: Clear old data
         playerScoreboards.clear();
