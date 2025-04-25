@@ -1,7 +1,9 @@
 package proj;
 
 import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
 import java.util.*;
 
 public class View extends JFrame {
@@ -22,7 +24,7 @@ public class View extends JFrame {
     private Scoreboard computerScoreboard = new Scoreboard();
     private Score scoreCalculator = new Score();
 
-    private Computer computerPlayer = new Computer(Computer.Difficulty.HARD);
+    private Computer computerPlayer; 
 
     public View() {
         PlayerLibrary library = new PlayerLibrary();
@@ -30,6 +32,29 @@ public class View extends JFrame {
         library.addPlayer(currentPlayer);
         model = new Model(library);
         controller = new Controller(model, this);
+
+        // Ask player for computer difficulty
+        String[] difficulties = { "Easy", "Hard" };
+        String choice = (String) JOptionPane.showInputDialog(
+                this,
+                "Choose computer difficulty:",
+                "Difficulty Selection",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                difficulties,
+                difficulties[0]
+        );
+        
+        if (choice == null) {
+            JOptionPane.showMessageDialog(this, "You must select a difficulty to start the game. Exiting...");
+            System.exit(0);
+        }
+        
+        if (choice.equals("Easy")) {
+            computerPlayer = new ComputerEasy();
+        } else {
+            computerPlayer = new ComputerHard();
+        }
 
         setupUI();
     }
@@ -80,11 +105,13 @@ public class View extends JFrame {
         categoryLabels = new HashMap<>();
         computerScoreboardPanel = new JPanel(new GridLayout(14, 1));
         computerCategoryLabels = new HashMap<>();
-        List<String> categories = Arrays.asList(
+
+        java.util.List<String> categories = Arrays.asList(
             "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
             "Three of a Kind", "Four of a Kind", "Full House",
             "Small Straight", "Large Straight", "Yahtzee", "Chance"
         );
+
         for (String cat : categories) {
             JLabel pl = new JLabel(cat + ": -");
             pl.setFont(new Font("Arial", Font.PLAIN, 16));
@@ -96,6 +123,7 @@ public class View extends JFrame {
             computerScoreboardPanel.add(cl);
             computerCategoryLabels.put(cat, cl);
         }
+
         JLabel total1 = new JLabel("Total Score: 0");
         total1.setFont(new Font("Arial", Font.BOLD, 18));
         scoreboardPanel.add(total1);
@@ -135,32 +163,55 @@ public class View extends JFrame {
         Map<String, Integer> possibleScores = scoreCalculator.evaluate(currentDice);
         ArrayList<String> availableCategories = scoreboard.getRemainingCategories();
         Map<String, Integer> filteredScores = new LinkedHashMap<>();
+
         List<String> order = Arrays.asList(
             "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
             "Three of a Kind", "Four of a Kind", "Full House",
             "Small Straight", "Large Straight", "Yahtzee", "Chance"
         );
+
         for (String cat : order) {
             if (availableCategories.contains(cat) && possibleScores.get(cat) != null && possibleScores.get(cat) > 0) {
                 filteredScores.put(cat, possibleScores.get(cat));
             }
         }
 
-        if (filteredScores.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No available categories! Turn skipped.");
-            return;
-        }
+        String chosenCategory = null;
+        int chosenScore = 0;
 
-        String[] options = filteredScores.keySet().toArray(new String[0]);
-        String chosenCategory = (String) JOptionPane.showInputDialog(
-            this, "Choose a category to score:", "Select Score",
-            JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+        if (filteredScores.isEmpty()) {
+            // 🚨 No good categories => pick any available and score 0
+            String[] options = availableCategories.toArray(new String[0]);
+            chosenCategory = (String) JOptionPane.showInputDialog(
+                this,
+                "No valid scoring categories!\nPick a category to cross out (score 0):",
+                "Forced Category Selection",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]
+            );
+            chosenScore = 0;
+        } else {
+            // 😎 Normal: pick a good scoring category
+            String[] options = filteredScores.keySet().toArray(new String[0]);
+            chosenCategory = (String) JOptionPane.showInputDialog(
+                this,
+                "Choose a category to score:",
+                "Select Score",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]
+            );
+            chosenScore = filteredScores.get(chosenCategory);
+        }
 
         if (chosenCategory == null) return;
 
-        scoreboard.setScore(chosenCategory, filteredScores.get(chosenCategory));
+        scoreboard.setScore(chosenCategory, chosenScore);
         updateScoreboardDisplay();
-        JOptionPane.showMessageDialog(this, "Scored " + filteredScores.get(chosenCategory) + " in " + chosenCategory);
+        JOptionPane.showMessageDialog(this, "Scored " + chosenScore + " in " + chosenCategory + "!");
 
         rollButton.setEnabled(true);
         currentPlayer.resetRollCount();
@@ -176,12 +227,17 @@ public class View extends JFrame {
         // === Computer Turn ===
         computerPlayer.roll(computerScoreboard);
         ArrayList<Dice> cd = new ArrayList<>();
-        cd.addAll(computerPlayer.testGetDice());
+        if (computerPlayer instanceof ComputerEasy) {
+            cd.addAll(((ComputerEasy)computerPlayer).getCurrentDice());
+        } else if (computerPlayer instanceof ComputerHard) {
+            cd.addAll(((ComputerHard)computerPlayer).getCurrentDice());
+        }
         for (int i = 0; i < cd.size(); i++) {
             computerDiceLabels[i].setText(String.valueOf(cd.get(i).getCurrentValue().ordinal() + 1));
         }
         updateComputerScoreboardDisplay();
     }
+
 
     private void updateScoreboardDisplay() {
         for (String cat : categoryLabels.keySet()) {

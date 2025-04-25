@@ -181,6 +181,14 @@ public class ComputerHard implements Computer{
 	        }
 	    };
 	}
+	
+	public ArrayList<Dice> getCurrentDice() {
+	    ArrayList<Dice> allDice = new ArrayList<>();
+	    allDice.addAll(cup.getInDice());
+	    allDice.addAll(cup.getOutDice());
+	    return allDice;
+	}
+
 
 }
 
