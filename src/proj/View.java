@@ -279,6 +279,7 @@ public class View extends JFrame {
             showLeaderboard();
             startNewGame();
         } else {
+        	currentPlayer.resetRollCount();
             nextTurn();
         }
 
