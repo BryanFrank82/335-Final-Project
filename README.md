@@ -57,3 +57,24 @@ There are two types of players:
   - Determines playing order: human players roll to decide, then computers go after.
 
 ---
+
+- **Error Handling:**  
+  - Code checks for bounds on dice selection.
+  - Scoreboard disallows overwriting a category that has already been filled.
+
+---
+
+## Summary of Files
+| File              | Purpose |
+|-------------------|---------|
+| `Dice.java`        | Single dice logic |
+| `Value.java`       | Enum for dice values |
+| `Cup.java`         | Holds multiple dice and manages rolls |
+| `Score.java`       | Calculates possible scores from dice |
+| `Scoreboard.java`  | Tracks scores across categories |
+| `Player.java`      | Represents a human or computer player |
+| `Computer.java`    | Smart AI player logic |
+| `PlayerLibrary.java` | Manages all players' historical scores |
+| `GameBoard.java`   | Manages the list and order of players |
+
+---
