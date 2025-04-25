@@ -10,14 +10,14 @@ import org.junit.jupiter.api.Test;
 
 public class ComputerTest {
 
-    private Computer hardPlayer;
-    private Computer easyPlayer;
+    private ComputerHard hardPlayer;
+    private ComputerEasy easyPlayer;
     private Scoreboard scoreboard;
 
     @BeforeEach
     public void setUp() {
-        hardPlayer = new Computer(Computer.Difficulty.HARD);
-        easyPlayer = new Computer(Computer.Difficulty.EASY);
+        hardPlayer = new ComputerHard();
+        easyPlayer = new ComputerEasy();
         scoreboard = new Scoreboard();
     }
 
@@ -30,7 +30,6 @@ public class ComputerTest {
         }
     }
 
-    
     @Test
     public void testHardModePrefersYahtzee() {
         Cup cup = new Cup();
@@ -66,6 +65,7 @@ public class ComputerTest {
 
         assertEquals(25, scoreboard.getScores().get("Full House"));
     }
+
     @Test
     public void testEasyModeChoosesAnyScore() {
         Cup cup = new Cup();
@@ -114,7 +114,7 @@ public class ComputerTest {
             assertNotNull(entry.getValue());
         }
     }
-	
+
     @Test
     public void testAllCategoriesFilledAfter13Rolls() {
         for (int i = 0; i < 13; i++) {
@@ -122,5 +122,4 @@ public class ComputerTest {
         }
         assertEquals(13, scoreboard.getScores().entrySet().stream().filter(e -> e.getValue() != null).count());
     }
-    
 }
