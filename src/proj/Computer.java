@@ -68,7 +68,7 @@ public class Computer {
 		Set<String> specialScores = new HashSet<>(Arrays.asList(
 		        "Three of a Kind", "Four of a Kind", "Full House",
 		        "Small Straight", "Large Straight", "Yahtzee"));
-		return specialScores.contains(score);
+		return specialScores.contains(score); 
 	}
 	
 	// returns a map of eligible special scores (bottom 6)
@@ -86,7 +86,7 @@ public class Computer {
 	 * This method chooses between eligible scoring options depending
 	 * on the difficulty level
 	 */
-	public ArrayList<Object> choose(ArrayList<Dice> roll, Scoreboard scoreboard) {
+	private ArrayList<Object> choose(ArrayList<Dice> roll, Scoreboard scoreboard) {
 		// finalChoice = [String, Integer] representation of score choice made
 		ArrayList<Object> finalChoice = new ArrayList<>();
 		Score choices = new Score();
