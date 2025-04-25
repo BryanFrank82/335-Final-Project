@@ -22,7 +22,7 @@ public class Scoreboard {
         return false;
     }
 
-    // return the 
+    // return the score
     public Map<String, Integer> getScores() {
         return Collections.unmodifiableMap(scores);
     }
