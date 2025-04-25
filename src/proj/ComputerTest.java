@@ -19,6 +19,8 @@ public class ComputerTest {
         hardPlayer = new ComputerHard();
         easyPlayer = new ComputerEasy();
         scoreboard = new Scoreboard();
+        hardPlayer.resetCup();
+        easyPlayer.resetCup();
     }
 
     private void setDiceValues(ArrayList<Dice> diceList, Value... values) {

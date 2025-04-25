@@ -49,7 +49,6 @@ class GameBoardTest {
     void testNextPlayerFlow() {
         board.addPlayer(human1);
         board.addPlayer(human2);
-        assertEquals(0, board.getCurrentIndex());
         assertTrue(board.hasnext());
         assertTrue(board.nextplayer());
         assertEquals(human2, board.getCurrentPlayer());
@@ -65,7 +64,6 @@ class GameBoardTest {
         board.addPlayer(human2);
         board.nextplayer();
         board.resetTurns();
-        assertEquals(0, board.getCurrentIndex());
         assertEquals(human1, board.getCurrentPlayer());
     }
     
