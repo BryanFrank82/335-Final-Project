@@ -10,10 +10,6 @@ public class GameBoard {
 	private int currentIndex;
 	private final PlayerLibrary library;
 	
-
-	
-	
-	
 	 public GameBoard(PlayerLibrary library) {
 	        this.players = new ArrayList<>();
 	        this.currentIndex = 0;
