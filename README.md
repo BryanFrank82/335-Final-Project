@@ -9,7 +9,14 @@ There are two types of players:
 - **Computer** (AI, play with human player based on difficulty: easy or hard)
 
 ---
-
+### How to Play:
+  - You'll be prompted to enter the number of human and computer players.
+  - Computer players come with selectable difficulty modes (Easy/Hard).
+  - Each turn, roll the dice and chose a scoring option or reroll for a better score.
+  - Each player has a max of three rolls per turn
+  - Scores will automatically update after each turn.
+  - Game stats and leaderboard will appear at the end of each game
+---
 ### Classes:
 
 - **`Dice.java`**
